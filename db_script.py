@@ -1,6 +1,16 @@
 from create_bot import *
 # Запуск процесса поллинга новых апдейтов
 DB_NAME = 'quiz_bot.db'
+
+# Функция для получения статистики всех игроков
+async def get_all_players_stats():
+    all_players_stats = []
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute('SELECT * FROM quiz_state') as cursor:
+            async for row in cursor:
+                all_players_stats.append(row)
+    return all_players_stats
+
 async def get_quiz_index(user_id):
     # Подключаемся к базе данных
     async with aiosqlite.connect(DB_NAME) as db:
