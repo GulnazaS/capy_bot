@@ -11,7 +11,7 @@ from quiz_question import *
 
 logging.basicConfig(level=logging.INFO)
 
-# токен от BotFather
+# Токен от BotFather
 API_TOKEN = '6951656120:AAG55G76ClyLApiTfbuQZllAUun5UZQUTGI'
 
 # Объект бота
@@ -30,7 +30,6 @@ def generate_options_keyboard(answer_options, right_answer):
 
     builder.adjust(1)
     return builder.as_markup()
-
 
 @dp.callback_query(F.data == "right_answer")
 async def right_answer(callback: types.CallbackQuery):
