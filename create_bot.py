@@ -43,17 +43,17 @@ async def right_answer(callback: types.CallbackQuery):
 
     await callback.message.answer("Верно!")
     current_question_index = await get_quiz_index(callback.from_user.id)
-    score = await get_quiz_index(callback.from_user.id)
+    correct_answers = await get_quiz_index(callback.from_user.id)
     # Обновление номера текущего вопроса в базе данных
     current_question_index += 1
-    score += 1
-    await update_quiz_index(callback.from_user.id, current_question_index, score)
+    correct_answers += 1
+    await update_quiz_index(callback.from_user.id, current_question_index, correct_answers)
 
 
     if current_question_index < len(quiz_data):
         await get_question(callback.message, callback.from_user.id)
     else:
-        await callback.message.answer(f"Это был последний вопрос. КапиКвиз завершен! Вы набрали {score} баллов")
+        await callback.message.answer(f"Это был последний вопрос. КапиКвиз завершен! Вы набрали {correct_answers} баллов")
 
 
 @dp.callback_query(F.data == "wrong_answer")
@@ -66,20 +66,20 @@ async def wrong_answer(callback: types.CallbackQuery):
 
     # Получение текущего вопроса из словаря состояний пользователя
     current_question_index = await get_quiz_index(callback.from_user.id)
-    score = await get_quiz_index(callback.from_user.id)
+    correct_answers = await get_quiz_index(callback.from_user.id)
     correct_option = quiz_data[current_question_index]['correct_option']
 
     await callback.message.answer(f"Неправильно. Правильный ответ: {quiz_data[current_question_index]['options'][correct_option]}")
 
     # Обновление номера текущего вопроса в базе данных
     current_question_index += 1
-    await update_quiz_index(callback.from_user.id, current_question_index)
+    await update_quiz_index(callback.from_user.id, current_question_index, correct_answers)
 
 
     if current_question_index < len(quiz_data):
         await get_question(callback.message, callback.from_user.id)
     else:
-        await callback.message.answer(f"Это был последний вопрос. КапиКвиз завершен! Вы набрали {score} баллов")
+        await callback.message.answer(f"Это был последний вопрос. КапиКвиз завершен! Вы набрали {correct_answers} баллов")
  #Хэндлер на команду /start
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
@@ -101,7 +101,8 @@ async def get_question(message, user_id):
 async def new_quiz(message):
     user_id = message.from_user.id
     current_question_index = 0
-    await update_quiz_index(user_id, current_question_index)
+    correct_answers = 0
+    await update_quiz_index(user_id, current_question_index, correct_answers)
     await get_question(message, user_id)
 
 # Хэндлер на команду /quiz
