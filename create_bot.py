@@ -5,6 +5,8 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from aiogram import F
+
+from db_script import update_quiz_index, get_quiz_index
 from quiz_question import *
 
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +19,6 @@ bot = Bot(token=API_TOKEN)
 # Диспетчер
 dp = Dispatcher()
 
-DB_NAME = 'quiz_bot.db'
 def generate_options_keyboard(answer_options, right_answer):
     builder = InlineKeyboardBuilder()
 
@@ -42,15 +43,17 @@ async def right_answer(callback: types.CallbackQuery):
 
     await callback.message.answer("Верно!")
     current_question_index = await get_quiz_index(callback.from_user.id)
+    score = await get_quiz_index(callback.from_user.id)
     # Обновление номера текущего вопроса в базе данных
     current_question_index += 1
-    await update_quiz_index(callback.from_user.id, current_question_index)
+    score += 1
+    await update_quiz_index(callback.from_user.id, current_question_index, score)
 
 
     if current_question_index < len(quiz_data):
         await get_question(callback.message, callback.from_user.id)
     else:
-        await callback.message.answer("Это был последний вопрос. КапиКвиз завершен!")
+        await callback.message.answer(f"Это был последний вопрос. КапиКвиз завершен! Вы набрали {score} баллов")
 
 
 @dp.callback_query(F.data == "wrong_answer")
@@ -63,6 +66,7 @@ async def wrong_answer(callback: types.CallbackQuery):
 
     # Получение текущего вопроса из словаря состояний пользователя
     current_question_index = await get_quiz_index(callback.from_user.id)
+    score = await get_quiz_index(callback.from_user.id)
     correct_option = quiz_data[current_question_index]['correct_option']
 
     await callback.message.answer(f"Неправильно. Правильный ответ: {quiz_data[current_question_index]['options'][correct_option]}")
@@ -75,7 +79,7 @@ async def wrong_answer(callback: types.CallbackQuery):
     if current_question_index < len(quiz_data):
         await get_question(callback.message, callback.from_user.id)
     else:
-        await callback.message.answer("Это был последний вопрос. КапиКвиз завершен!")
+        await callback.message.answer(f"Это был последний вопрос. КапиКвиз завершен! Вы набрали {score} баллов")
  #Хэндлер на команду /start
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
@@ -99,28 +103,6 @@ async def new_quiz(message):
     current_question_index = 0
     await update_quiz_index(user_id, current_question_index)
     await get_question(message, user_id)
-
-
-async def get_quiz_index(user_id):
-     # Подключаемся к базе данных
-     async with aiosqlite.connect(DB_NAME) as db:
-        # Получаем запись для заданного пользователя
-        async with db.execute('SELECT question_index FROM quiz_state WHERE user_id = (?)', (user_id, )) as cursor:
-            # Возвращаем результат
-            results = await cursor.fetchone()
-            if results is not None:
-                return results[0]
-            else:
-                return 0
-
-
-async def update_quiz_index(user_id, index):
-    # Создаем соединение с базой данных (если она не существует, она будет создана)
-    async with aiosqlite.connect(DB_NAME) as db:
-        # Вставляем новую запись или заменяем ее, если с данным user_id уже существует
-        await db.execute('INSERT OR REPLACE INTO quiz_state (user_id, question_index) VALUES (?, ?)', (user_id, index))
-        # Сохраняем изменения
-        await db.commit()
 
 # Хэндлер на команду /quiz
 @dp.message(F.text=="Начать игру")
