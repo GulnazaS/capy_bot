@@ -15,7 +15,7 @@ from quiz_question import *
 logging.basicConfig(level=logging.INFO)
 
 #Токен от BotFather
-API_TOKEN = '6951656120:AAG55G76ClyLApiTfbuQZllAUun5UZQUTGI'
+API_TOKEN = 'API_TOKEN'
 
 #Объект бота
 bot = Bot(token=API_TOKEN)
